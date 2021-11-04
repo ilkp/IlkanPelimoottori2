@@ -151,10 +151,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Common.h" />
     <ClInclude Include="ComponentSystem.h" />
     <ClInclude Include="Entity.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="RigidbodySystem.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="TransformSystem.cpp" />
   </ItemGroup>
