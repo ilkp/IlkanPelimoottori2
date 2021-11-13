@@ -100,9 +100,13 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(Solutiondir)bin\SDL2_renderer\$(Platform)\$(Configuration)\;$(Solutiondir)bin\core\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>core.lib;SDL2_renderer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <HeapReserveSize>
+      </HeapReserveSize>
+      <HeapCommitSize>
+      </HeapCommitSize>
     </Link>
     <PostBuildEvent>
-      <Command>if $(Platform) == x86 (
+      <Command>if $(Platform) == Win32 (
     echo "Copying SDL2.dll for x86"
     copy "C:\SDK\SDL\SDL2-2.0.14\lib\x86\SDL2.dll" "$(TargetDir)\SDL2.dll"
 )
@@ -130,9 +134,13 @@ if $(Platform) == x64 (
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(Solutiondir)bin\SDL2_renderer\$(Platform)\$(Configuration)\;$(Solutiondir)bin\core\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>core.lib;SDL2_renderer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <HeapReserveSize>
+      </HeapReserveSize>
+      <HeapCommitSize>
+      </HeapCommitSize>
     </Link>
     <PostBuildEvent>
-      <Command>if $(Platform) == x86 (
+      <Command>if $(Platform) == Win32 (
     echo "Copying SDL2.dll for x86"
     copy "C:\SDK\SDL\SDL2-2.0.14\lib\x86\SDL2.dll" "$(TargetDir)\SDL2.dll"
 )
@@ -199,7 +207,11 @@ if $(Platform) == x64 (
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game.cpp" />
     <ClCompile Include="Source.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Game.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

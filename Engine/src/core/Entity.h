@@ -6,7 +6,9 @@ namespace idop
 	class Entity
 	{
 	public:
-		const uint32_t _id;
+		const uint32_t _entityId;
+
+		Entity(uint32_t entityId) : _entityId(entityId) {}
 	};
 
 	class EntityBlock

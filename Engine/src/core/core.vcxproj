@@ -152,12 +152,20 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Common.h" />
+    <ClInclude Include="ComponentData.h" />
     <ClInclude Include="ComponentSystem.h" />
+    <ClInclude Include="ctpl_stl.h" />
     <ClInclude Include="Entity.h" />
+    <ClInclude Include="EntitySystem.h" />
+    <ClInclude Include="Physics.h" />
+    <ClInclude Include="PrimitiveMesh.h" />
+    <ClInclude Include="Transform.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CameraSystem.cpp" />
+    <ClCompile Include="ColliderSystem.cpp" />
+    <ClCompile Include="MeshSystem.cpp" />
     <ClCompile Include="RigidbodySystem.cpp" />
-    <ClCompile Include="Source.cpp" />
     <ClCompile Include="TransformSystem.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

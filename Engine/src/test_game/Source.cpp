@@ -1,10 +1,13 @@
-#include "ComponentSystem.h"
+#define SDL_MAIN_HANDLED
+#include <iostream>
+#include <chrono>
+#include "Game.h"
 
 int main()
 {
-	idop::TransformSystem transformSystem;
-	//transformSystem.Print();
-	std::cout << sizeof(glm::quat) << "  " << sizeof(glm::mat4);
-
+	Game game;
+	if (!game.Init())
+		return 1;
+	game.Start();
 	return 0;
 }
