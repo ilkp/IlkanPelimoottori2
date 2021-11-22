@@ -1,19 +1,23 @@
 #pragma once
 #include <unordered_map>
-#include <type_traits>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include "ctpl_stl.h"
 
 #include "Entity.h"
 #include "Common.h"
 #include "ComponentData.h"
-#include "ctpl_stl.h"
 
 
 namespace idop
 {
+	static uint32_t ComponentIndexBits(uint32_t seqBytes, uint32_t maxCompSize)
+	{
+		return (1 << (uint32_t)(std::log2((double)(seqBytes / maxCompSize)) + 1.0)) - 1;
+	}
+
 	class IComponentSystem
 	{
 	public:
@@ -32,8 +36,8 @@ namespace idop
 	class TransformSystem : public IComponentSystem
 	{
 	public:
-		const uint32_t SEQ_BYTES = 256 * 1000;
-		const uint32_t INDEX_BITS_COMP = (1 << (uint32_t)(std::log2((double)(SEQ_BYTES / TransformData::MAX_COMP_SIZE)) + 1.0)) - 1;
+		const uint32_t SEQ_BYTES = 32 * 1000;
+		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, TransformData::MAX_COMP_SIZE);
 		const uint32_t INDEX_BITS_SEQ = ~INDEX_BITS_COMP;
 		std::unordered_map<uint32_t, TransformData> _componentData;
 
@@ -47,7 +51,7 @@ namespace idop
 		bool IsReserved(Entity entity) const { return IsReserved(entity._entityId); };
 		bool IsStatic(uint32_t entityId) const;
 		bool IsStatic(Entity entity) const { return IsStatic(entity._entityId); };
-
+		
 		void CalculateMVP();
 		void SetScale(uint32_t entityId, const glm::vec3& vector);
 		void SetScale(uint32_t entityId, float x, float y, float z);
@@ -71,8 +75,8 @@ namespace idop
 	{
 	public:
 		std::unordered_map<uint32_t, RigidbodyData> _componentData;
-		const uint32_t SEQ_BYTES = 256 * 1000;
-		const uint32_t INDEX_BITS_COMP = ~(uint32_t(0)) >> (uint32_t)std::ceil(std::log2((double)SEQ_BYTES / RigidbodyData::MAX_COMP_SIZE) + 1.0);
+		const uint32_t SEQ_BYTES = 32 * 1000;
+		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, RigidbodyData::MAX_COMP_SIZE);
 		const uint32_t INDEX_BITS_SEQ = ~INDEX_BITS_COMP;
 
 		void Reserve(uint32_t entityId) override;
@@ -98,8 +102,8 @@ namespace idop
 	class MeshSystem : public IComponentSystem
 	{
 	public:
-		const uint32_t SEQ_BYTES = 256 * 1000;
-		const uint32_t INDEX_BITS_COMP = ~(uint32_t(0)) >> (uint32_t)std::ceil(std::log2((double)SEQ_BYTES / MeshData::MAX_COMP_SIZE) + 1.0);
+		const uint32_t SEQ_BYTES = 32 * 1000;
+		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, MeshData::MAX_COMP_SIZE);
 		const uint32_t INDEX_BITS_SEQ = ~INDEX_BITS_COMP;
 		std::unordered_map<uint32_t, MeshData> _componentData;
 
@@ -121,8 +125,8 @@ namespace idop
 	{
 	public:
 		std::unordered_map<uint32_t, CameraData> _componentData;
-		const uint32_t SEQ_BYTES = 256 * 1000;
-		const uint32_t INDEX_BITS_COMP = ~(uint32_t(0)) >> (uint32_t)std::ceil(std::log2((double)SEQ_BYTES / CameraData::MAX_COMP_SIZE) + 1.0);
+		const uint32_t SEQ_BYTES = 32 * 1000;
+		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, CameraData::MAX_COMP_SIZE);
 		const uint32_t INDEX_BITS_SEQ = ~INDEX_BITS_COMP;
 
 		void Reserve(uint32_t entityId) override;
@@ -144,8 +148,8 @@ namespace idop
 	class ColliderSystem : public IComponentSystem
 	{
 	public:
-		const uint32_t SEQ_BYTES = 256 * 1000;
-		const uint32_t INDEX_BITS_COMP = ~(uint32_t(0)) >> (uint32_t)std::ceil(std::log2((double)SEQ_BYTES / ColliderData::MAX_COMP_SIZE) + 1.0);
+		const uint32_t SEQ_BYTES = 32 * 1000;
+		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, ColliderData::MAX_COMP_SIZE);
 		const uint32_t INDEX_BITS_SEQ = ~INDEX_BITS_COMP;
 		std::unordered_map<uint32_t, ColliderData> _componentData;
 

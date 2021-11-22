@@ -31,4 +31,11 @@ namespace idop
 		glm::mat4 _projectionMatrix;
 		glm::mat4 _viewMatrix;
 	};
+
+	enum class ColliderType
+	{
+		Box,
+		Sphere,
+		Mesh
+	};
 }

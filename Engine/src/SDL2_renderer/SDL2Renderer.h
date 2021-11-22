@@ -13,6 +13,7 @@ namespace idop
 		int Init(int width, int height);
 		void Clean();
 		void Render(uint32_t cameraEntityId, const RenderingData& renderingData);
+		void SetTitle(const char* title) { SDL_SetWindowTitle(_window, title); }
 
 	private:
 		TransformSystem* _transformSystem = nullptr;;

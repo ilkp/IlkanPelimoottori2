@@ -4,20 +4,21 @@ namespace idop
 {
 	void CameraSystem::Reserve(uint32_t entityId)
 	{
-		std::unordered_map<uint32_t, CameraData>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
+		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 		{
-			it = _componentData.insert({ entityId & INDEX_BITS_SEQ, CameraData() }).first;
-			(*it).second.Allocate(INDEX_BITS_COMP);
+			CameraData cData;
+			it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, std::move(cData))).first;
+			it->second.Allocate(INDEX_BITS_COMP + 1);
 		}
-		(*it).second._reserved[entityId & INDEX_BITS_COMP] = true;
+		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
 	}
 
 	void CameraSystem::Release(uint32_t entityId)
 	{
-		std::unordered_map<uint32_t, CameraData>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
+		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it != _componentData.end())
-			(*it).second._reserved[entityId & INDEX_BITS_COMP] = false;
+			it->second._reserved[entityId & INDEX_BITS_COMP] = false;
 	}
 
 	void CameraSystem::Identity(uint32_t entityId)
@@ -26,15 +27,7 @@ namespace idop
 		std::unordered_map<uint32_t, CameraData>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 			it = NCReserve(entityId);
-		(*it).second._projectionMatrix[componentIndex] = glm::perspective(
-			glm::radians(45.0f),
-			4.0f / 3.0f,
-			0.1f,
-			100.0f);
-		(*it).second._viewMatrix[componentIndex] = glm::lookAt(
-			glm::vec3(20.0f, 20.0f, 0.0f),
-			glm::vec3(0.0f, 0.0f, 0.0f),
-			glm::vec3(0.0f, 1.0f, 0.0f));
+		it->second.Identity(componentIndex);
 	}
 
 	Camera CameraSystem::GetCamera(uint32_t entityId) const
@@ -52,9 +45,9 @@ namespace idop
 
 	std::unordered_map<uint32_t, CameraData>::iterator CameraSystem::NCReserve(uint32_t entityId)
 	{
-		std::unordered_map<uint32_t, CameraData>::iterator it = _componentData.insert({ entityId & INDEX_BITS_SEQ, CameraData() }).first;
-		(*it).second.Allocate(INDEX_BITS_COMP);
-		(*it).second._reserved[entityId & INDEX_BITS_COMP] = true;
+		std::unordered_map<uint32_t, CameraData>::iterator it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, std::move(CameraData()))).first;
+		it->second.Allocate(INDEX_BITS_COMP + 1);
+		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
 		return it;
 	}
 }

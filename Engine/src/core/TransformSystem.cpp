@@ -1,47 +1,44 @@
 #include <glm/gtx/quaternion.hpp>
 #include <math.h>
-#include "ComponentSystem.h"
 #include <iostream>
+#include "ComponentSystem.h"
+#include <future>
 
 namespace idop
 {
 	void TransformSystem::Reserve(uint32_t entityId)
 	{
-		std::unordered_map<uint32_t, TransformData>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
+		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 		{
-			it = _componentData.insert({ entityId & INDEX_BITS_SEQ, TransformData() }).first;
-			(*it).second.Allocate(INDEX_BITS_COMP);
+			it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, std::move(TransformData()))).first;
+			it->second.Allocate(INDEX_BITS_COMP + 1);
 		}
-		(*it).second._reserved[entityId & INDEX_BITS_COMP] = true;
+		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
 	}
 
     void TransformSystem::Release(uint32_t entityId)
     {
-		std::unordered_map<uint32_t, TransformData>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
+		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it != _componentData.end())
-			(*it).second._reserved[entityId & INDEX_BITS_COMP] = false;
+			it->second._reserved[entityId & INDEX_BITS_COMP] = false;
     }
 
 	std::unordered_map<uint32_t, TransformData>::iterator TransformSystem::NCReserve(uint32_t entityId)
 	{
-		std::unordered_map<uint32_t, TransformData>::iterator it = _componentData.insert({ entityId & INDEX_BITS_SEQ, TransformData() }).first;
-		(*it).second.Allocate(INDEX_BITS_COMP);
-		(*it).second._reserved[entityId & INDEX_BITS_COMP] = true;
+		auto it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, std::move(TransformData()))).first;
+		it->second.Allocate(INDEX_BITS_COMP + 1);
+		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
 		return it;
 	}
 
 	void idop::TransformSystem::Identity(uint32_t entityId)
 	{
 		uint32_t componentIndex = entityId & INDEX_BITS_COMP;
-		std::unordered_map<uint32_t, TransformData>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
+		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 			it = NCReserve(entityId);
-		(*it).second._isStatic[componentIndex] = false;
-		(*it).second._scale[componentIndex] = glm::mat4(1.0f);
-		(*it).second._translation[componentIndex] = glm::mat4(1.0f);
-		(*it).second._quaternion[componentIndex] = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-		(*it).second._modelViewProjection[componentIndex] = glm::mat4(1.0f);
+		it->second.Identity(componentIndex);
 	}
 
 	bool TransformSystem::IsReserved(uint32_t entityId) const
@@ -49,7 +46,7 @@ namespace idop
 		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 			return false;
-		return (*it).second._reserved[entityId & INDEX_BITS_COMP];
+		return it->second._reserved[entityId & INDEX_BITS_COMP];
 	}
 
 	bool TransformSystem::IsStatic(uint32_t entityId) const
@@ -57,16 +54,25 @@ namespace idop
 		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 			return false;
-		return (*it).second._isStatic[entityId & INDEX_BITS_COMP];
+		return it->second._isStatic[entityId & INDEX_BITS_COMP];
 	}
 
 	void TransformSystem::CalculateMVP()
 	{
+		//for (auto& [seqId, tData] : _componentData)
+		//{
+		//	for (uint32_t i = 0; i < INDEX_BITS_COMP; ++i)
+		//	{
+		//		if (tData._reserved[i])
+		//			tData._modelViewProjection[i] = tData._translation[i] * glm::toMat4(tData._quaternion[i]) * tData._scale[i];
+		//	}
+		//}
+
 		uint32_t subSeqLength = std::ceil(INDEX_BITS_COMP / _threadPool.size());
 		std::vector<std::future<void>> results(_threadPool.size());
 		for (auto it = _componentData.begin(); it != _componentData.end(); ++it)
 		{
-			TransformData* tData = &(*it).second;
+			TransformData* tData = &it->second;
 			for (int i = 0; i < _threadPool.size(); ++i)
 			{
 				uint32_t start = i * subSeqLength;

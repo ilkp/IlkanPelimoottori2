@@ -164,6 +164,7 @@
   <ItemGroup>
     <ClCompile Include="CameraSystem.cpp" />
     <ClCompile Include="ColliderSystem.cpp" />
+    <ClCompile Include="ComponentData.cpp" />
     <ClCompile Include="MeshSystem.cpp" />
     <ClCompile Include="RigidbodySystem.cpp" />
     <ClCompile Include="TransformSystem.cpp" />

@@ -102,8 +102,9 @@
       <AdditionalDependencies>core.lib;SDL2_renderer.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <HeapReserveSize>
       </HeapReserveSize>
-      <HeapCommitSize>
-      </HeapCommitSize>
+      <HeapCommitSize>50000000</HeapCommitSize>
+      <StackReserveSize>
+      </StackReserveSize>
     </Link>
     <PostBuildEvent>
       <Command>if $(Platform) == Win32 (
@@ -136,8 +137,9 @@ if $(Platform) == x64 (
       <AdditionalDependencies>core.lib;SDL2_renderer.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <HeapReserveSize>
       </HeapReserveSize>
-      <HeapCommitSize>
-      </HeapCommitSize>
+      <HeapCommitSize>50000000</HeapCommitSize>
+      <StackReserveSize>
+      </StackReserveSize>
     </Link>
     <PostBuildEvent>
       <Command>if $(Platform) == Win32 (
@@ -164,6 +166,9 @@ if $(Platform) == x64 (
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(Solutiondir)bin\SDL2_renderer\$(Platform)\$(Configuration)\;$(Solutiondir)bin\core\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>core.lib;SDL2_renderer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <HeapReserveSize>
+      </HeapReserveSize>
+      <HeapCommitSize>50000000</HeapCommitSize>
     </Link>
     <PostBuildEvent>
       <Command>if $(Platform) == x86 (
@@ -194,6 +199,9 @@ if $(Platform) == x64 (
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(Solutiondir)bin\SDL2_renderer\$(Platform)\$(Configuration)\;$(Solutiondir)bin\core\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>core.lib;SDL2_renderer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <HeapReserveSize>
+      </HeapReserveSize>
+      <HeapCommitSize>50000000</HeapCommitSize>
     </Link>
     <PostBuildEvent>
       <Command>if $(Platform) == x86 (
