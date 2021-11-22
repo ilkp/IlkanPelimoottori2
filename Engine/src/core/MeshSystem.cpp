@@ -22,11 +22,10 @@ namespace idop
 
 	void MeshSystem::Identity(uint32_t entityId)
 	{
-		uint32_t componentIndex = entityId & INDEX_BITS_COMP;
 		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 			it = NCReserve(entityId);
-		it->second.Identity(componentIndex);
+		it->second.Identity(entityId & INDEX_BITS_COMP);
 	}
 
 	void MeshSystem::SetMesh(uint32_t entityId, const Mesh& mesh)
@@ -35,30 +34,28 @@ namespace idop
 		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 			it = NCReserve(entityId);
-		delete[](it->second._vertices[compIndex]);
-		delete[](it->second._triangles[compIndex]);
-		delete[](it->second._uvs[compIndex]);
-
-		it->second._verticesLength[compIndex] = mesh._verticesLength;
-		it->second._trianglesLength[compIndex] = mesh._trianglesLength;
-		it->second._uvsLength[compIndex] = mesh._uvsLength;
-
-		it->second._vertices[compIndex] = new glm::vec3[mesh._verticesLength];
-		it->second._triangles[compIndex] = new int[mesh._trianglesLength];
-		it->second._uvs[compIndex] = new glm::vec2[mesh._uvsLength];
+		MeshData& meshData = it->second;
+		delete[](meshData._vertices[compIndex]);
+		delete[](meshData._triangles[compIndex]);
+		delete[](meshData._uvs[compIndex]);
+		meshData._verticesLength[compIndex] = mesh._verticesLength;
+		meshData._trianglesLength[compIndex] = mesh._trianglesLength;
+		meshData._uvsLength[compIndex] = mesh._uvsLength;
+		meshData._vertices[compIndex] = new glm::vec3[mesh._verticesLength];
+		meshData._triangles[compIndex] = new int[mesh._trianglesLength];
+		meshData._uvs[compIndex] = new glm::vec2[mesh._uvsLength];
 		for (int i = 0; i < mesh._verticesLength; ++i)
-			it->second._vertices[compIndex][i] = mesh._vertices[i];
+			meshData._vertices[compIndex][i] = mesh._vertices[i];
 		for (int i = 0; i < mesh._trianglesLength; ++i)
-			it->second._triangles[compIndex][i] = mesh._triangles[i];
+			meshData._triangles[compIndex][i] = mesh._triangles[i];
 		for (int i = 0; i < mesh._uvsLength; ++i)
-			it->second._uvs[compIndex][i] = mesh._uvs[i];
-
-		it->second._bounds[compIndex]._min.x = mesh._bounds._min.x;
-		it->second._bounds[compIndex]._min.y = mesh._bounds._min.y;
-		it->second._bounds[compIndex]._min.z = mesh._bounds._min.z;
-		it->second._bounds[compIndex]._max.x = mesh._bounds._max.x;
-		it->second._bounds[compIndex]._max.y = mesh._bounds._max.y;
-		it->second._bounds[compIndex]._max.z = mesh._bounds._max.z;
+			meshData._uvs[compIndex][i] = mesh._uvs[i];
+		meshData._bounds[compIndex]._min.x = mesh._bounds._min.x;
+		meshData._bounds[compIndex]._min.y = mesh._bounds._min.y;
+		meshData._bounds[compIndex]._min.z = mesh._bounds._min.z;
+		meshData._bounds[compIndex]._max.x = mesh._bounds._max.x;
+		meshData._bounds[compIndex]._max.y = mesh._bounds._max.y;
+		meshData._bounds[compIndex]._max.z = mesh._bounds._max.z;
 	}
 
 	std::unordered_map<uint32_t, MeshData>::iterator MeshSystem::NCReserve(uint32_t entityId)

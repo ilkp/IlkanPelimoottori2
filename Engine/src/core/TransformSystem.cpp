@@ -34,11 +34,10 @@ namespace idop
 
 	void idop::TransformSystem::Identity(uint32_t entityId)
 	{
-		uint32_t componentIndex = entityId & INDEX_BITS_COMP;
 		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 			it = NCReserve(entityId);
-		it->second.Identity(componentIndex);
+		it->second.Identity(entityId & INDEX_BITS_COMP);
 	}
 
 	bool TransformSystem::IsReserved(uint32_t entityId) const
