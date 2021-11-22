@@ -7,7 +7,7 @@ namespace idop
 		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 		{
-			it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, std::move(RigidbodyData()))).first;
+			it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, RigidbodyData())).first;
 			it->second.Allocate(INDEX_BITS_COMP + 1);
 		}
 		it->second._reserved[entityId & INDEX_BITS_COMP + 1] = true;
@@ -23,7 +23,7 @@ namespace idop
 	void RigidbodySystem::Identity(uint32_t entityId)
 	{
 		uint32_t componentIndex = entityId & INDEX_BITS_COMP;
-		std::unordered_map<uint32_t, RigidbodyData>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
+		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 			it = NCReserve(entityId);
 		it->second.Identity(componentIndex);
@@ -36,7 +36,7 @@ namespace idop
 
 	std::unordered_map<uint32_t, RigidbodyData>::iterator RigidbodySystem::NCReserve(uint32_t entityId)
 	{
-		std::unordered_map<uint32_t, RigidbodyData>::iterator it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, std::move(RigidbodyData()))).first;
+		auto it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, RigidbodyData())).first;
 		it->second.Allocate(INDEX_BITS_COMP + 1);
 		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
 		return it;

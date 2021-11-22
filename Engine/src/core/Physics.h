@@ -77,4 +77,9 @@ namespace idop::phys
 			}
 		}
 	}
+
+	//void Collide(float deltaTime, uint32_t entityIdA, uint32_t entityIdB, const TransformSystem& tSystem)
+	//{
+
+	//}
 }

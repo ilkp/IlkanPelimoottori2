@@ -9,7 +9,7 @@ namespace idop
 		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 		{
-			it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, std::move(ColliderData()))).first;
+			it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, ColliderData())).first;
 			it->second.Allocate(INDEX_BITS_COMP + 1);
 		}
 		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
@@ -34,7 +34,7 @@ namespace idop
 	void ColliderSystem::Identity(uint32_t entityId)
 	{
 		uint32_t componentIndex = entityId & INDEX_BITS_COMP;
-		std::unordered_map<uint32_t, ColliderData>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
+		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 			it = NCReserve(entityId);
 		it->second.Identity(componentIndex);
@@ -52,7 +52,7 @@ namespace idop
 
 	std::unordered_map<uint32_t, ColliderData>::iterator ColliderSystem::NCReserve(uint32_t entityId)
 	{
-		std::unordered_map<uint32_t, ColliderData>::iterator it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, std::move(ColliderData()))).first;
+		auto it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, ColliderData())).first;
 		it->second.Allocate(INDEX_BITS_COMP + 1);
 		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
 		return it;

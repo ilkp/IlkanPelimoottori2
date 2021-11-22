@@ -11,7 +11,7 @@ namespace idop
 		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
 		if (it == _componentData.end())
 		{
-			it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, std::move(TransformData()))).first;
+			it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, TransformData())).first;
 			it->second.Allocate(INDEX_BITS_COMP + 1);
 		}
 		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
@@ -26,7 +26,7 @@ namespace idop
 
 	std::unordered_map<uint32_t, TransformData>::iterator TransformSystem::NCReserve(uint32_t entityId)
 	{
-		auto it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, std::move(TransformData()))).first;
+		auto it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, TransformData())).first;
 		it->second.Allocate(INDEX_BITS_COMP + 1);
 		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
 		return it;
