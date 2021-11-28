@@ -81,8 +81,9 @@ namespace idop
 		static const size_t MAX_COMP_SIZE = sizeof(Bounds3D);
 		bool* _reserved = nullptr;
 		ColliderType* _colliderType = nullptr;
+		glm::mat4* _scale = nullptr;
+		glm::mat4* _offset = nullptr;
 		uint32_t* _colliderGroupId = nullptr;
-		uint32_t* _transformId = nullptr;
 		uint32_t* _meshId = nullptr;
 		Bounds3D* _worldBounds = nullptr;
 

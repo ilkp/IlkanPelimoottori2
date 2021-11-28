@@ -1,6 +1,4 @@
 #define SDL_MAIN_HANDLED
-#include <iostream>
-#include <chrono>
 #include "Game.h"
 
 int main()

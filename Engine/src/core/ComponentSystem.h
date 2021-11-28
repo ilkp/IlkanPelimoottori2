@@ -28,25 +28,70 @@ namespace idop
 		// Release will only mark data correspoding to entityId as not in use
 		virtual void Release(uint32_t entityId) = 0;
 
-		// Identity will return data correspoding to entityId to default state and deletes pointer members
-		// If data corresponding to entityId doesn't exist, it will be reserved
+		// Will reset data of entity.
+		// Function will allocate data, if it wasn't allocated
 		virtual void Identity(uint32_t entityId) = 0;
 	};
 
-	class TransformSystem : public IComponentSystem
+	template <class T>
+	class ComponentSystem : public IComponentSystem
 	{
 	public:
+		std::unordered_map<uint32_t, T> _componentData;
 		const uint32_t SEQ_BYTES = 32 * 1000;
-		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, TransformData::MAX_COMP_SIZE);
+		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, T::MAX_COMP_SIZE);
 		const uint32_t INDEX_BITS_SEQ = ~INDEX_BITS_COMP;
-		std::unordered_map<uint32_t, TransformData> _componentData;
 
-		void Reserve(uint32_t entityId) override;
-		void Release(uint32_t entityId) override;
-		void Identity(uint32_t entityId) override;
+		ComponentSystem(uint32_t seqBytes) : SEQ_BYTES(seqBytes) {}
+		ComponentSystem(uint32_t seqBytes, std::initializer_list<IComponentSystem*> dependencies) : SEQ_BYTES(seqBytes), _dependencies{dependencies} {}
+
+		void Reserve(uint32_t entityId) override
+		{
+			typename std::unordered_map<uint32_t, T>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
+			if (it == _componentData.end())
+			{
+				it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, T())).first;
+				it->second.Allocate(INDEX_BITS_COMP + 1);
+			}
+			it->second._reserved[entityId & INDEX_BITS_COMP] = true;
+			for (IComponentSystem* system : _dependencies)
+				system->Reserve(entityId);
+		}
+		void Release(uint32_t entityId) override
+		{
+			typename std::unordered_map<uint32_t, T>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
+			if (it != _componentData.end())
+				it->second._reserved[entityId & INDEX_BITS_COMP] = false;
+		}
+		void Identity(uint32_t entityId) override
+		{
+			typename std::unordered_map<uint32_t, T>::iterator it = _componentData.find(entityId & INDEX_BITS_SEQ);
+			if (it == _componentData.end())
+				it = NoCheckReserve(entityId);
+			it->second.Identity(entityId & INDEX_BITS_COMP);
+		}
 		void Reserve(Entity entity) { Reserve(entity._entityId); }
 		void Release(Entity entity) { Release(entity._entityId); }
 		void Identity(Entity entity) { Identity(entity._entityId); }
+
+	protected:
+		std::vector<IComponentSystem*> _dependencies;
+		typename std::unordered_map<uint32_t, T>::iterator NoCheckReserve(uint32_t entityId)
+		{
+			typename std::unordered_map<uint32_t, T>::iterator it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, T())).first;
+			it->second.Allocate(INDEX_BITS_COMP + 1);
+			it->second._reserved[entityId & INDEX_BITS_COMP] = true;
+			for (IComponentSystem* system : _dependencies)
+				system->Reserve(entityId);
+			return it;
+		}
+	};
+
+	class TransformSystem : public ComponentSystem<TransformData>
+	{
+	public:
+		using ComponentSystem::ComponentSystem;
+
 		bool IsReserved(uint32_t entityId) const;
 		bool IsReserved(Entity entity) const { return IsReserved(entity._entityId); };
 		bool IsStatic(uint32_t entityId) const;
@@ -62,29 +107,18 @@ namespace idop
 		void Rotate(uint32_t entityId, const glm::vec3& eulerAngles);
 		void Rotate(uint32_t entityId, float x, float y, float z);
 
-		glm::vec3 Position(uint32_t entityId) const;
-		glm::vec3 Scale(uint32_t entityId) const;
+		glm::vec3 GetPositionVector(uint32_t entityId) const;
+		glm::vec3 GetScaleVector(uint32_t entityId) const;
 		void CalculateMVPSeq(TransformData* tData, uint32_t start, uint32_t end);
 
 	private:
 		ctpl::thread_pool _threadPool = ctpl::thread_pool(std::thread::hardware_concurrency());
-		std::unordered_map<uint32_t, TransformData>::iterator NCReserve(uint32_t entityId);
 	};
 
-	class RigidbodySystem : public IComponentSystem
+	class RigidbodySystem : public ComponentSystem<RigidbodyData>
 	{
 	public:
-		std::unordered_map<uint32_t, RigidbodyData> _componentData;
-		const uint32_t SEQ_BYTES = 32 * 1000;
-		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, RigidbodyData::MAX_COMP_SIZE);
-		const uint32_t INDEX_BITS_SEQ = ~INDEX_BITS_COMP;
-
-		void Reserve(uint32_t entityId) override;
-		void Release(uint32_t entityId) override;
-		void Identity(uint32_t entityId) override;
-		void Reserve(Entity entity) { Reserve(entity._entityId); }
-		void Release(Entity entity) { Release(entity._entityId); }
-		void Identity(Entity entity) { Identity(entity._entityId); }
+		using ComponentSystem::ComponentSystem;
 
 		void SetMass(uint32_t entityId, float mass);
 		void SetMomentOfInertia(uint32_t entityId, float inertia);
@@ -95,78 +129,43 @@ namespace idop
 		void SetAngularVelocity(uint32_t entityId, const glm::vec3& angularVelocity);
 		void SetAngularVelocity(uint32_t entityId, float x, float y, float z);
 
-	private:
-		std::unordered_map<uint32_t, RigidbodyData>::iterator NCReserve(uint32_t entityId);
+		float GetMass(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._mass[entityId & INDEX_BITS_COMP]; }
+		float GetMomentOfInertia(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._momentOfInertia[entityId & INDEX_BITS_COMP]; }
+		glm::vec3* GetVelocity(uint32_t entityId) const { return &_componentData.at(entityId & INDEX_BITS_SEQ)._velocity[entityId & INDEX_BITS_COMP]; }
+		glm::vec3* GetAcceleration(uint32_t entityId) const { return &_componentData.at(entityId & INDEX_BITS_SEQ)._acceleration[entityId & INDEX_BITS_COMP]; }
+		glm::vec3* GetAngularVelocity(uint32_t entityId) const { return &_componentData.at(entityId & INDEX_BITS_SEQ)._angularVelocity[entityId & INDEX_BITS_COMP]; }
 	};
 
-	class MeshSystem : public IComponentSystem
+	class MeshSystem : public ComponentSystem<MeshData>
 	{
 	public:
-		const uint32_t SEQ_BYTES = 32 * 1000;
-		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, MeshData::MAX_COMP_SIZE);
-		const uint32_t INDEX_BITS_SEQ = ~INDEX_BITS_COMP;
-		std::unordered_map<uint32_t, MeshData> _componentData;
-
-		void Reserve(uint32_t entityId) override;
-		void Release(uint32_t entityId) override;
-		void Identity(uint32_t entityId) override;
-		void Reserve(Entity entity) { Reserve(entity._entityId); }
-		void Release(Entity entity) { Release(entity._entityId); }
-		void Identity(Entity entity) { Identity(entity._entityId); }
+		using ComponentSystem::ComponentSystem;
 
 		void SetMesh(uint32_t entityId, const Mesh& mesh);
 		void SetMesh(Entity entity, const Mesh& mesh) { SetMesh(entity._entityId, mesh); }
-
-	private:
-		std::unordered_map<uint32_t, MeshData>::iterator NCReserve(uint32_t entityId);
 	};
 
-	class CameraSystem : public IComponentSystem
+	class CameraSystem : public ComponentSystem<CameraData>
 	{
 	public:
-		std::unordered_map<uint32_t, CameraData> _componentData;
-		const uint32_t SEQ_BYTES = 32 * 1000;
-		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, CameraData::MAX_COMP_SIZE);
-		const uint32_t INDEX_BITS_SEQ = ~INDEX_BITS_COMP;
-
-		void Reserve(uint32_t entityId) override;
-		void Release(uint32_t entityId) override;
-		void Identity(uint32_t entityId) override;
-		void Reserve(Entity entity) { Reserve(entity._entityId); };
-		void Release(Entity entity) { Release(entity._entityId); };
-		void Identity(Entity entity) { Identity(entity._entityId); };
+		using ComponentSystem::ComponentSystem;
 
 		Camera GetCamera(uint32_t entityId) const;
 		void LookAt(uint32_t entityId, glm::vec3 position, glm::vec3 center, glm::vec3 up);
 		void LookAt(Entity entity, glm::vec3 position, glm::vec3 center, glm::vec3 up) { LookAt(entity._entityId, position, center, up); }
-
-	private:
-		std::unordered_map<uint32_t, CameraData>::iterator NCReserve(uint32_t entityId);
-
 	};
 
-	class ColliderSystem : public IComponentSystem
+	class ColliderSystem : public ComponentSystem<ColliderData>
 	{
 	public:
-		const uint32_t SEQ_BYTES = 32 * 1000;
-		const uint32_t INDEX_BITS_COMP = ComponentIndexBits(SEQ_BYTES, ColliderData::MAX_COMP_SIZE);
-		const uint32_t INDEX_BITS_SEQ = ~INDEX_BITS_COMP;
-		std::unordered_map<uint32_t, ColliderData> _componentData;
-
-		void Reserve(uint32_t entityId) override;
-		void Release(uint32_t entityId) override;
-		void Identity(uint32_t entityId) override;
-		void Reserve(Entity entity) { Reserve(entity._entityId); }
-		void Release(Entity entity) { Release(entity._entityId); }
-		void Identity(Entity entity) { Identity(entity._entityId); }
+		using ComponentSystem::ComponentSystem;
 
 		void CalculateWorldBounds(const TransformSystem& tSystem, const MeshSystem& mSystem);
 		void SetMeshId(uint32_t entityId, uint32_t meshId);
 		void SetMeshId(Entity entity, uint32_t meshId) { SetMeshId(entity._entityId, meshId); }
-		void SetTransformId(uint32_t entityId, uint32_t transformId);
-		void SetTransformId(Entity entity, uint32_t transformId) { SetTransformId(entity._entityId, transformId); }
 
 	private:
-		std::unordered_map<uint32_t, ColliderData>::iterator NCReserve(uint32_t entityId);
+		void BoxPoints(glm::vec4* points);
+		void CalculateWorldBoundsBox(const TransformData& tData, uint32_t tIndex, const ColliderData& cData, uint32_t cIndex);
 	};
 }

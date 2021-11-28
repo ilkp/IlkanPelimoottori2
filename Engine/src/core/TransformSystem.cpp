@@ -6,40 +6,6 @@
 
 namespace idop
 {
-	void TransformSystem::Reserve(uint32_t entityId)
-	{
-		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
-		if (it == _componentData.end())
-		{
-			it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, TransformData())).first;
-			it->second.Allocate(INDEX_BITS_COMP + 1);
-		}
-		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
-	}
-
-    void TransformSystem::Release(uint32_t entityId)
-    {
-		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
-		if (it != _componentData.end())
-			it->second._reserved[entityId & INDEX_BITS_COMP] = false;
-    }
-
-	std::unordered_map<uint32_t, TransformData>::iterator TransformSystem::NCReserve(uint32_t entityId)
-	{
-		auto it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, TransformData())).first;
-		it->second.Allocate(INDEX_BITS_COMP + 1);
-		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
-		return it;
-	}
-
-	void idop::TransformSystem::Identity(uint32_t entityId)
-	{
-		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
-		if (it == _componentData.end())
-			it = NCReserve(entityId);
-		it->second.Identity(entityId & INDEX_BITS_COMP);
-	}
-
 	bool TransformSystem::IsReserved(uint32_t entityId) const
 	{
 		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
@@ -149,17 +115,17 @@ namespace idop
 		_componentData[entityId & INDEX_BITS_SEQ]._quaternion[entityId & INDEX_BITS_COMP] *= glm::quat(glm::vec3(x, y, z));
 	}
 
-	glm::vec3 TransformSystem::Position(uint32_t entityId) const
+	glm::vec3 TransformSystem::GetPositionVector(uint32_t entityId) const
 	{
 		glm::vec3 rValue;
 		const glm::mat4& source = _componentData.at(entityId & INDEX_BITS_SEQ)._translation[entityId & INDEX_BITS_COMP];
 		rValue.x = source[3][0];
-		rValue.y = source[3][0];
-		rValue.z = source[3][0];
+		rValue.y = source[3][1];
+		rValue.z = source[3][2];
 		return rValue;
 	}
 
-	glm::vec3 TransformSystem::Scale(uint32_t entityId) const
+	glm::vec3 TransformSystem::GetScaleVector(uint32_t entityId) const
 	{
 		glm::vec3 rValue;
 		const glm::mat4& source = _componentData.at(entityId & INDEX_BITS_SEQ)._scale[entityId & INDEX_BITS_COMP];

@@ -157,6 +157,7 @@
     <ClInclude Include="ctpl_stl.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntitySystem.h" />
+    <ClInclude Include="IdopException.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="PrimitiveMesh.h" />
     <ClInclude Include="Transform.h" />
@@ -164,6 +165,7 @@
   <ItemGroup>
     <ClCompile Include="CameraSystem.cpp" />
     <ClCompile Include="ColliderSystem.cpp" />
+    <ClCompile Include="Common.cpp" />
     <ClCompile Include="ComponentData.cpp" />
     <ClCompile Include="MeshSystem.cpp" />
     <ClCompile Include="RigidbodySystem.cpp" />

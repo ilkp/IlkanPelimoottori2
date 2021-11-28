@@ -4,8 +4,8 @@ namespace idop
 {
 	void TransformData::Allocate(uint32_t length)
 	{
-		_reserved = new bool[length];
-		_isStatic = new bool[length];
+		_reserved = new bool[length] { false };
+		_isStatic = new bool[length] { false };
 		_scale = new glm::mat4[length];
 		_translation = new glm::mat4[length];
 		_quaternion = new glm::quat[length];
@@ -31,7 +31,7 @@ namespace idop
 
 	void CameraData::Allocate(uint32_t length)
 	{
-		_reserved = new bool[length];
+		_reserved = new bool[length] { false };
 		_projectionMatrix = new glm::mat4[length];
 		_viewMatrix = new glm::mat4[length];
 	}
@@ -56,7 +56,7 @@ namespace idop
 
 	void RigidbodyData::Allocate(uint32_t length)
 	{
-		_reserved = new bool[length];
+		_reserved = new bool[length] { false };
 		_useGravity = new bool[length];
 		_mass = new float[length];
 		_momentOfInertia = new float[length];
@@ -92,7 +92,7 @@ namespace idop
 	void MeshData::Allocate(uint32_t length)
 	{
 		_length = length;
-		_reserved = new bool[length];
+		_reserved = new bool[length] { false };
 		_verticesLength = new int[length];
 		_trianglesLength = new int[length];
 		_uvsLength = new int[length];
@@ -139,10 +139,11 @@ namespace idop
 
 	void ColliderData::Allocate(uint32_t length)
 	{
-		_reserved = new bool[length];
+		_reserved = new bool[length] { false };
 		_colliderType = new ColliderType[length];
+		_scale = new glm::mat4[length];
+		_offset = new glm::mat4[length];
 		_colliderGroupId = new uint32_t[length];
-		_transformId = new uint32_t[length];
 		_meshId = new uint32_t[length];
 		_worldBounds = new Bounds3D[length];
 	}
@@ -150,16 +151,19 @@ namespace idop
 	{
 		delete[](_reserved);
 		delete[](_colliderType);
+		delete[](_scale);
+		delete[](_offset);
 		delete[](_colliderGroupId);
-		delete[](_transformId);
 		delete[](_meshId);
 		delete[](_worldBounds);
 	}
 	void ColliderData::Identity(uint32_t index)
 	{
 		_colliderType[index] = ColliderType::Box;
+		_scale[index] = glm::mat4(1.0f);
+		_offset[index] = glm::mat4(1.0f);
 		_colliderGroupId[index] = 0;
-		_transformId[index] = 0;
+		_meshId[index] = 0;
 		_worldBounds[index]._min.x = 0.0f;
 		_worldBounds[index]._min.y = 0.0f;
 		_worldBounds[index]._min.z = 0.0f;

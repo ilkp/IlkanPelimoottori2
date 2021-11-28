@@ -13,25 +13,32 @@ bool Game::Init()
 	if (_SDLrenderer.Init(600, 400) != 0)
 		return false;
 
+	_cameraSystem.Reserve(_camera);
+	_cameraSystem.Identity(_camera);
+	_meshSystem.SetMesh(_cubeMesh, idop::primitives::Cube());
+
 	float randomPos = 40.0f;
-	int nItems = 1000;
+	int nItems = 2;
 
 	for (int i = 0; i < nItems; ++i)
 	{
 		_cubes.push_back(idop::Entity(_entitySystem.Next()));
 		_transformSystem.Reserve(_cubes[i]._entityId);
 		_transformSystem.Identity(_cubes[i]._entityId);
-		_transformSystem.SetPosition(_cubes[i]._entityId, -randomPos + (float)(rand()) / (float(RAND_MAX / (randomPos * 2.0f))), -randomPos + (float)(rand()) / (float(RAND_MAX / (randomPos * 2.0f))), -randomPos + (float)(rand()) / (float(RAND_MAX / (randomPos * 2.0f))));
+		//_transformSystem.SetPosition(_cubes[i]._entityId, -randomPos + (float)(rand()) / (float(RAND_MAX / (randomPos * 2.0f))), -randomPos + (float)(rand()) / (float(RAND_MAX / (randomPos * 2.0f))), -randomPos + (float)(rand()) / (float(RAND_MAX / (randomPos * 2.0f))));
+		_rigidBodySystem.Reserve(_cubes[i]._entityId);
+		_rigidBodySystem.Identity(_cubes[i]._entityId);
+		_colliderSystem.Reserve(_cubes[i]._entityId);
+		_colliderSystem.Identity(_cubes[i]._entityId);
+		_colliderSystem._componentData[_cubes[i]._entityId & _colliderSystem.INDEX_BITS_SEQ]._meshId[_cubes[i]._entityId & _colliderSystem.INDEX_BITS_COMP] = _cubeMesh._entityId;
 		_meshMVP.push_back(_cubes[i]._entityId);
 	}
-
-	_cameraSystem.Reserve(_camera);
-	_cameraSystem.Identity(_camera);
-	_meshSystem.SetMesh(_cubeMesh, std::move(idop::primitives::Cube()));
-
-	//_rigidBodySystem.Reserve(_cubes[0]);
-	//_rigidBodySystem.Identity(_cubes[0]);
-	//_rigidBodySystem._componentData[_cubes[0]._entityId & _rigidBodySystem.INDEX_BITS_SEQ]._useGravity[_cubes[0]._entityId & _rigidBodySystem.INDEX_BITS_COMP] = true;
+	_transformSystem.SetPosition(_cubes[0]._entityId, 0.0f, 0.1f, 10.0f);
+	_transformSystem.SetPosition(_cubes[1]._entityId, 0.0f, 0.0f, -10.0f);
+	_rigidBodySystem.SetVelocity(_cubes[0]._entityId, 0.0f, 0.0f, -0.1f);
+	_rigidBodySystem.SetVelocity(_cubes[1]._entityId, 0.0f, 0.0f, 0.1f);
+	_rigidBodySystem.SetAngularVelocity(_cubes[0]._entityId, 0.0f, 0.0f, -0.02f);
+	_rigidBodySystem.SetAngularVelocity(_cubes[1]._entityId, 0.0f, -0.02f, 0.0f);
 
 	_renderingData._meshMVP.insert(std::make_pair(_cubeMesh._entityId, _meshMVP));
 
@@ -51,8 +58,8 @@ void Game::Start()
 		HandleEvents();
 		now = std::chrono::system_clock::now();
 		elapsedTime = now - lastFrameStart;
-		_timeSinceStart += elapsedTime.count();
 		lastFrameStart = std::chrono::system_clock::now();
+		_timeSinceStart += elapsedTime.count();
 		fpsTimer += elapsedTime.count();
 		if (fpsTimer > FPS_MAX_TIME)
 		{
@@ -93,10 +100,12 @@ void Game::UpdateCubesParallel(float deltaTime)
 
 void Game::Update(float deltaTime)
 {
-	float camPosScale = 70.0f;
+	float camPosScale = 20.0f;
 	glm::vec3 camPos = glm::vec3(camPosScale, -camPosScale, 2.0f);
-	_cameraSystem.LookAt(_camera, camPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	UpdateCubes(deltaTime);
+	_cameraSystem.LookAt(_camera, camPos, glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	//UpdateCubes(deltaTime);
+	_colliderSystem.CalculateWorldBounds(_transformSystem, _meshSystem);
+	idop::phys::ProcessCollisions(deltaTime, _transformSystem, _colliderSystem, _meshSystem, _rigidBodySystem);
 	idop::phys::ProcessRigidbodies(&_rigidBodySystem, &_transformSystem, deltaTime, _gravity);
 	_transformSystem.CalculateMVP();
 	_SDLrenderer.Render(_camera._entityId, _renderingData);

@@ -2,43 +2,9 @@
 
 namespace idop
 {
-	void RigidbodySystem::Reserve(uint32_t entityId)
-	{
-		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
-		if (it == _componentData.end())
-		{
-			it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, RigidbodyData())).first;
-			it->second.Allocate(INDEX_BITS_COMP + 1);
-		}
-		it->second._reserved[entityId & INDEX_BITS_COMP + 1] = true;
-	}
-
-    void RigidbodySystem::Release(uint32_t entityId)
-    {
-		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
-		if (it != _componentData.end())
-			it->second._reserved[entityId & INDEX_BITS_COMP] = false;
-    }
-
-	void RigidbodySystem::Identity(uint32_t entityId)
-	{
-		auto it = _componentData.find(entityId & INDEX_BITS_SEQ);
-		if (it == _componentData.end())
-			it = NCReserve(entityId);
-		it->second.Identity(entityId & INDEX_BITS_COMP);
-	}
-
 	void RigidbodySystem::SetMass(uint32_t entityId, float mass)
 	{
 		_componentData[entityId & INDEX_BITS_SEQ]._mass[entityId & INDEX_BITS_COMP] = mass;
-	}
-
-	std::unordered_map<uint32_t, RigidbodyData>::iterator RigidbodySystem::NCReserve(uint32_t entityId)
-	{
-		auto it = _componentData.insert(std::make_pair(entityId & INDEX_BITS_SEQ, RigidbodyData())).first;
-		it->second.Allocate(INDEX_BITS_COMP + 1);
-		it->second._reserved[entityId & INDEX_BITS_COMP] = true;
-		return it;
 	}
 
 	void RigidbodySystem::SetMomentOfInertia(uint32_t entityId, float inertia)

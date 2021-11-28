@@ -6,20 +6,21 @@ namespace idop::primitives
 	static Mesh Cube()
 	{
 		Mesh mesh;
+		const float pointDist = PrimitiveShapeVertexDefaultDistance;
 		mesh._verticesLength = 8;
 		mesh._trianglesLength = 12 * 3;
 		mesh._uvsLength = 8;
 		mesh._vertices = new glm::vec3[]
 		{
-			glm::vec3(-1.0f, -1.0f, 1.0f),
-			glm::vec3(1.0f, -1.0f, 1.0f),
-			glm::vec3(1.0f, -1.0f, -1.0f),
-			glm::vec3(-1.0f, -1.0f, -1.0f),
+			glm::vec3(-pointDist, -pointDist, pointDist),
+			glm::vec3(pointDist, -pointDist, pointDist),
+			glm::vec3(pointDist, -pointDist, -pointDist),
+			glm::vec3(-pointDist, -pointDist, -pointDist),
 
-			glm::vec3(-1.0f, 1.0f, 1.0f),
-			glm::vec3(1.0f, 1.0f, 1.0f),
-			glm::vec3(1.0f, 1.0f, -1.0f),
-			glm::vec3(-1.0f, 1.0f, -1.0f)
+			glm::vec3(-pointDist, pointDist, pointDist),
+			glm::vec3(pointDist, pointDist, pointDist),
+			glm::vec3(pointDist, pointDist, -pointDist),
+			glm::vec3(-pointDist, pointDist, -pointDist)
 		};
 		mesh._triangles = new int[]
 		{
@@ -48,12 +49,12 @@ namespace idop::primitives
 			glm::vec2(0.0f, 0.0f),
 			glm::vec2(0.0f, 0.0f)
 		};
-		mesh._bounds._min.x = -1.0f;
-		mesh._bounds._min.y = -1.0f;
-		mesh._bounds._min.z = -1.0f;
-		mesh._bounds._max.x = 1.0f;
-		mesh._bounds._max.y = 1.0f;
-		mesh._bounds._max.z = 1.0f;
+		mesh._bounds._min.x = -pointDist;
+		mesh._bounds._min.y = -pointDist;
+		mesh._bounds._min.z = -pointDist;
+		mesh._bounds._max.x = pointDist;
+		mesh._bounds._max.y = pointDist;
+		mesh._bounds._max.z = pointDist;
 		return mesh;
 	}
 }

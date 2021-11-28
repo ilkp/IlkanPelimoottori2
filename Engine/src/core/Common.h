@@ -3,6 +3,8 @@
 
 namespace idop
 {
+	extern float PrimitiveShapeVertexDefaultDistance;
+
 	struct Bounds3D
 	{
 		glm::vec3 _min;
