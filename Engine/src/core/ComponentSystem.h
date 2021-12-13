@@ -98,21 +98,26 @@ namespace idop
 		bool IsStatic(Entity entity) const { return IsStatic(entity._entityId); };
 		
 		void CalculateMVP();
+		void Translate(uint32_t entityId, const glm::vec3& vector);
+		void Translate(uint32_t entityId, float x, float y, float z);
 		void SetScale(uint32_t entityId, const glm::vec3& vector);
 		void SetScale(uint32_t entityId, float x, float y, float z);
 		void SetPosition(uint32_t entityId, const glm::vec3& vector);
 		void SetPosition(uint32_t entityId, float x, float y, float z);
-		void Translate(uint32_t entityId, const glm::vec3& vector);
-		void Translate(uint32_t entityId, float x, float y, float z);
+		void SetRotation(uint32_t entityId, const glm::quat& rotation);
+		void SetRotation(uint32_t entityId, const glm::mat4& rotation);
 		void Rotate(uint32_t entityId, const glm::vec3& eulerAngles);
 		void Rotate(uint32_t entityId, float x, float y, float z);
 
-		glm::vec3 GetPositionVector(uint32_t entityId) const;
+		glm::vec3 GetPosition(uint32_t entityId) const;
+		glm::mat4 GetPositionMat(uint32_t entityId) const;
 		glm::vec3 GetScaleVector(uint32_t entityId) const;
-		void CalculateMVPSeq(TransformData* tData, uint32_t start, uint32_t end);
+		glm::quat GetRotation(uint32_t entityId) const;
+		bool GetIsStatic(uint32_t entityId) const;
 
 	private:
 		ctpl::thread_pool _threadPool = ctpl::thread_pool(std::thread::hardware_concurrency());
+		void CalculateMVPSeq(TransformData* tData, uint32_t start, uint32_t end);
 	};
 
 	class RigidbodySystem : public ComponentSystem<RigidbodyData>
@@ -128,12 +133,17 @@ namespace idop
 		void SetAcceleration(uint32_t entityId, float x, float y, float z);
 		void SetAngularVelocity(uint32_t entityId, const glm::vec3& angularVelocity);
 		void SetAngularVelocity(uint32_t entityId, float x, float y, float z);
+		void SetUseGravity(uint32_t entityId, bool v) { _componentData.at(entityId & INDEX_BITS_SEQ)._useGravity[entityId & INDEX_BITS_COMP] = v; }
 
+		bool GetReserved(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._reserved[entityId & INDEX_BITS_COMP]; }
+		float GetCoef(uint32_t entityId) const {return _componentData.at(entityId & INDEX_BITS_SEQ)._coefficientOfRestitution[entityId & INDEX_BITS_COMP]; }
 		float GetMass(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._mass[entityId & INDEX_BITS_COMP]; }
 		float GetMomentOfInertia(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._momentOfInertia[entityId & INDEX_BITS_COMP]; }
-		glm::vec3* GetVelocity(uint32_t entityId) const { return &_componentData.at(entityId & INDEX_BITS_SEQ)._velocity[entityId & INDEX_BITS_COMP]; }
-		glm::vec3* GetAcceleration(uint32_t entityId) const { return &_componentData.at(entityId & INDEX_BITS_SEQ)._acceleration[entityId & INDEX_BITS_COMP]; }
-		glm::vec3* GetAngularVelocity(uint32_t entityId) const { return &_componentData.at(entityId & INDEX_BITS_SEQ)._angularVelocity[entityId & INDEX_BITS_COMP]; }
+		float GetStaticFriction(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._staticFriction[entityId & INDEX_BITS_COMP]; }
+		float GetDynamicFriction(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._dynamicFriction[entityId & INDEX_BITS_COMP]; }
+		glm::vec3 GetVelocity(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._velocity[entityId & INDEX_BITS_COMP]; }
+		glm::vec3 GetAcceleration(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._acceleration[entityId & INDEX_BITS_COMP]; }
+		glm::vec3 GetAngularVelocity(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._angularVelocity[entityId & INDEX_BITS_COMP]; }
 	};
 
 	class MeshSystem : public ComponentSystem<MeshData>
@@ -151,8 +161,9 @@ namespace idop
 		using ComponentSystem::ComponentSystem;
 
 		Camera GetCamera(uint32_t entityId) const;
-		void LookAt(uint32_t entityId, glm::vec3 position, glm::vec3 center, glm::vec3 up);
-		void LookAt(Entity entity, glm::vec3 position, glm::vec3 center, glm::vec3 up) { LookAt(entity._entityId, position, center, up); }
+		void ApplyTransforms(uint32_t entityId, const glm::vec3& position, const glm::quat& rotation);
+		void LookAt(uint32_t entityId, const glm::vec3& position, const glm::vec3& center, const glm::vec3& up);
+		void LookAt(Entity entity, const glm::vec3& position, const glm::vec3& center, const glm::vec3& up) { LookAt(entity._entityId, position, center, up); }
 	};
 
 	class ColliderSystem : public ComponentSystem<ColliderData>

@@ -22,5 +22,7 @@ namespace idop
 		SDL_Window* _window = nullptr;
 		SDL_Renderer* _renderer = nullptr;
 		glm::vec4 _viewport;
+
+		void RenderAxises(uint32_t cameraEntityId);
 	};
 }

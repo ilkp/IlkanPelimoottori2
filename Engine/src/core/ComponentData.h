@@ -49,6 +49,10 @@ namespace idop
 		bool* _useGravity = nullptr;
 		float* _mass = nullptr;
 		float* _momentOfInertia = nullptr;
+		float* _dragCoefficient = nullptr;
+		float* _coefficientOfRestitution = nullptr;
+		float* _staticFriction = nullptr;
+		float* _dynamicFriction = nullptr;
 		glm::vec3* _velocity = nullptr;
 		glm::vec3* _acceleration = nullptr;
 		glm::vec3* _angularVelocity = nullptr;

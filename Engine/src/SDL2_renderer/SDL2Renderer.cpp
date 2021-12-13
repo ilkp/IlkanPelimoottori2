@@ -36,7 +36,7 @@ void idop::SDL2Renderer::Clean()
 void idop::SDL2Renderer::Render(uint32_t cameraEntityId, const RenderingData& renderingData)
 {
 	const MeshData* meshData;
-	const CameraData* cameraData = &_cameraSystem->_componentData.at(cameraEntityId & _cameraSystem->INDEX_BITS_SEQ);
+	const CameraData& cameraData = _cameraSystem->_componentData.at(cameraEntityId & _cameraSystem->INDEX_BITS_SEQ);
 	const int* triangles;
 	SDL_SetRenderDrawColor(_renderer, 200, 200, 200, 255);
 	SDL_RenderClear(_renderer);
@@ -57,8 +57,8 @@ void idop::SDL2Renderer::Render(uint32_t cameraEntityId, const RenderingData& re
 			{
 				projectedPoints[i] = glm::project(
 					meshData->_vertices[meshId & _meshSystem->INDEX_BITS_COMP][i],
-					cameraData->_viewMatrix[cameraEntityId & _cameraSystem->INDEX_BITS_COMP] * _transformSystem->_componentData.at(mvpId & _transformSystem->INDEX_BITS_SEQ)._modelViewProjection[mvpId & _transformSystem->INDEX_BITS_COMP],
-					cameraData->_projectionMatrix[cameraEntityId & _cameraSystem->INDEX_BITS_COMP],
+					cameraData._viewMatrix[cameraEntityId & _cameraSystem->INDEX_BITS_COMP] * _transformSystem->_componentData.at(mvpId & _transformSystem->INDEX_BITS_SEQ)._modelViewProjection[mvpId & _transformSystem->INDEX_BITS_COMP],
+					cameraData._projectionMatrix[cameraEntityId & _cameraSystem->INDEX_BITS_COMP],
 					_viewport);
 			}
 
@@ -82,6 +82,12 @@ void idop::SDL2Renderer::Render(uint32_t cameraEntityId, const RenderingData& re
 					projectedPoints[triangles[i]].y);
 			}
 		}
-		SDL_RenderPresent(_renderer);
 	}
+	RenderAxises(cameraEntityId);
+	SDL_RenderPresent(_renderer);
+}
+
+void idop::SDL2Renderer::RenderAxises(uint32_t cameraEntityId)
+{
+	//const CameraData* cameraData = &_cameraSystem->_componentData.at(cameraEntityId & _cameraSystem->INDEX_BITS_SEQ);
 }

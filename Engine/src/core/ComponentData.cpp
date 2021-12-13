@@ -60,6 +60,10 @@ namespace idop
 		_useGravity = new bool[length];
 		_mass = new float[length];
 		_momentOfInertia = new float[length];
+		_dragCoefficient = new float[length];
+		_coefficientOfRestitution = new float[length];
+		_staticFriction = new float[length];
+		_dynamicFriction = new float[length];
 		_velocity = new glm::vec3[length];
 		_acceleration = new glm::vec3[length];
 		_angularVelocity = new glm::vec3[length];
@@ -70,14 +74,23 @@ namespace idop
 		delete[](_useGravity);
 		delete[](_mass);
 		delete[](_momentOfInertia);
+		delete[](_dragCoefficient);
+		delete[](_coefficientOfRestitution);
+		delete[](_staticFriction);
+		delete[](_dynamicFriction);
 		delete[](_velocity);
 		delete[](_acceleration);
 		delete[](_angularVelocity);
 	}
 	void RigidbodyData::Identity(uint32_t index)
 	{
+		_useGravity[index] = true;
 		_mass[index] = 1.0f;
 		_momentOfInertia[index] = 0.1f;
+		_dragCoefficient[index] = 0.0f;
+		_coefficientOfRestitution[index] = 0.1f;
+		_staticFriction[index] = 0.5f;
+		_dynamicFriction[index] = 0.3f;
 		_velocity[index].x = 0.0f;
 		_velocity[index].y = 0.0f;
 		_velocity[index].z = 0.0f;

@@ -12,15 +12,15 @@ namespace idop::primitives
 		mesh._uvsLength = 8;
 		mesh._vertices = new glm::vec3[]
 		{
-			glm::vec3(-pointDist, -pointDist, pointDist),
-			glm::vec3(pointDist, -pointDist, pointDist),
-			glm::vec3(pointDist, -pointDist, -pointDist),
 			glm::vec3(-pointDist, -pointDist, -pointDist),
+			glm::vec3(pointDist, -pointDist, -pointDist),
+			glm::vec3(pointDist, -pointDist, pointDist),
+			glm::vec3(-pointDist, -pointDist, pointDist),
 
-			glm::vec3(-pointDist, pointDist, pointDist),
-			glm::vec3(pointDist, pointDist, pointDist),
+			glm::vec3(-pointDist, pointDist, -pointDist),
 			glm::vec3(pointDist, pointDist, -pointDist),
-			glm::vec3(-pointDist, pointDist, -pointDist)
+			glm::vec3(pointDist, pointDist, pointDist),
+			glm::vec3(-pointDist, pointDist, pointDist),
 		};
 		mesh._triangles = new int[]
 		{
@@ -32,7 +32,6 @@ namespace idop::primitives
 				2, 7, 3,
 				3, 7, 4,
 				3, 4, 0,
-
 				4, 7, 6,
 				4, 6, 5,
 				3, 0, 1,

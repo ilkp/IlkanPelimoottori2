@@ -89,6 +89,16 @@ namespace idop
 		target[3][2] = z;
 	}
 
+	void TransformSystem::SetRotation(uint32_t entityId, const glm::quat& rotation)
+	{
+		_componentData[entityId & INDEX_BITS_SEQ]._quaternion[entityId & INDEX_BITS_COMP] = glm::quat(rotation);
+	}
+
+	void TransformSystem::SetRotation(uint32_t entityId, const glm::mat4& rotation)
+	{
+		_componentData[entityId & INDEX_BITS_SEQ]._quaternion[entityId & INDEX_BITS_COMP] = glm::quat_cast(rotation);
+	}
+
 	void TransformSystem::Translate(uint32_t entityId, const glm::vec3& vector)
 	{
 		glm::mat4& target = _componentData[entityId & INDEX_BITS_SEQ]._translation[entityId & INDEX_BITS_COMP];
@@ -115,7 +125,7 @@ namespace idop
 		_componentData[entityId & INDEX_BITS_SEQ]._quaternion[entityId & INDEX_BITS_COMP] *= glm::quat(glm::vec3(x, y, z));
 	}
 
-	glm::vec3 TransformSystem::GetPositionVector(uint32_t entityId) const
+	glm::vec3 TransformSystem::GetPosition(uint32_t entityId) const
 	{
 		glm::vec3 rValue;
 		const glm::mat4& source = _componentData.at(entityId & INDEX_BITS_SEQ)._translation[entityId & INDEX_BITS_COMP];
@@ -123,6 +133,11 @@ namespace idop
 		rValue.y = source[3][1];
 		rValue.z = source[3][2];
 		return rValue;
+	}
+
+	glm::mat4 TransformSystem::GetPositionMat(uint32_t entityId) const
+	{
+		return _componentData.at(entityId & INDEX_BITS_SEQ)._translation[entityId & INDEX_BITS_COMP];
 	}
 
 	glm::vec3 TransformSystem::GetScaleVector(uint32_t entityId) const
@@ -133,5 +148,15 @@ namespace idop
 		rValue.y = source[1][1];
 		rValue.z = source[2][2];
 		return rValue;
+	}
+
+	glm::quat TransformSystem::GetRotation(uint32_t entityId) const
+	{
+		return _componentData.at(entityId & INDEX_BITS_SEQ)._quaternion[entityId & INDEX_BITS_COMP];
+	}
+
+	bool TransformSystem::GetIsStatic(uint32_t entityId) const
+	{
+		return _componentData.at(entityId & INDEX_BITS_SEQ)._isStatic[entityId & INDEX_BITS_COMP];
 	}
 }

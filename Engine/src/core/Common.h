@@ -1,5 +1,6 @@
 #pragma once
 #include "glm/glm.hpp"
+#include <vector>
 
 namespace idop
 {
@@ -39,5 +40,19 @@ namespace idop
 		Box,
 		Sphere,
 		Mesh
+	};
+
+	struct ContactPoint
+	{
+		glm::vec3 _worldPoint;
+		glm::vec3 _normal;
+		float _penetrationDepth;
+	};
+
+	struct CollisionInfo
+	{
+		std::vector<ContactPoint> _contactPoints;
+		uint32_t _entityIdA;
+		uint32_t _entityIdB;
 	};
 }
