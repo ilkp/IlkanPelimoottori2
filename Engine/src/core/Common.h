@@ -46,6 +46,7 @@ namespace idop
 	{
 		glm::vec3 _worldPoint;
 		glm::vec3 _normal;
+		glm::vec3 _tangent;
 		float _penetrationDepth;
 	};
 
@@ -54,5 +55,12 @@ namespace idop
 		std::vector<ContactPoint> _contactPoints;
 		uint32_t _entityIdA;
 		uint32_t _entityIdB;
+	};
+
+	struct RbConstraints
+	{
+		bool _freezeRotationX;
+		bool _freezeRotationY;
+		bool _freezeRotationZ;
 	};
 }

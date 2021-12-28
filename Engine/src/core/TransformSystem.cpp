@@ -115,15 +115,19 @@ namespace idop
 		target[3][2] += z;
 	}
 
-	void TransformSystem::Rotate(uint32_t entityId, const glm::vec3& eulerAngles)
+	void TransformSystem::Rotate(uint32_t entityId, float angle, const glm::vec3& axis)
 	{
-		_componentData[entityId & INDEX_BITS_SEQ]._quaternion[entityId & INDEX_BITS_COMP] *= glm::quat(eulerAngles);
+		_componentData[entityId & INDEX_BITS_SEQ]._quaternion[entityId & INDEX_BITS_COMP]
+			= glm::rotate(
+				_componentData[entityId & INDEX_BITS_SEQ]._quaternion[entityId & INDEX_BITS_COMP],
+				angle,
+				axis);
 	}
 
-	void TransformSystem::Rotate(uint32_t entityId, float x, float y, float z)
-	{
-		_componentData[entityId & INDEX_BITS_SEQ]._quaternion[entityId & INDEX_BITS_COMP] *= glm::quat(glm::vec3(x, y, z));
-	}
+	//void TransformSystem::Rotate(uint32_t entityId, float x, float y, float z)
+	//{
+	//	_componentData[entityId & INDEX_BITS_SEQ]._quaternion[entityId & INDEX_BITS_COMP] *= glm::quat(glm::vec3(x, y, z));
+	//}
 
 	glm::vec3 TransformSystem::GetPosition(uint32_t entityId) const
 	{

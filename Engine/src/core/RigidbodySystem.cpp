@@ -53,4 +53,9 @@ namespace idop
 		_componentData[entityId & INDEX_BITS_SEQ]._angularVelocity[entityId & INDEX_BITS_COMP].y = y;
 		_componentData[entityId & INDEX_BITS_SEQ]._angularVelocity[entityId & INDEX_BITS_COMP].z = z;
 	}
+    glm::vec3 RigidbodySystem::GetAngularVelocityDeg(uint32_t entityId) const
+    {
+		const glm::vec3& target = _componentData.at(entityId & INDEX_BITS_SEQ)._angularVelocity[entityId & INDEX_BITS_COMP];
+		return glm::vec3(glm::degrees(target.x), glm::degrees(target.y), glm::degrees(target.z));
+    }
 }

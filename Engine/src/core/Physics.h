@@ -21,19 +21,18 @@ namespace idop::phys
 		return true;
 	}
 
-	// returns normal of the colliding plane and penetration depth of world point
 	std::optional<ContactPoint> GetContactPoint(
 		const glm::vec3& worldPoint,
-		const glm::vec3& pointVelocity,
+		const glm::vec3& pointVelocityA,
+		const glm::vec3& pointVelocityB,
 		const glm::vec3* localVertices,
 		const int* triangles,
 		const uint32_t verticesLength,
 		const uint32_t trianglesLength,
 		const glm::mat4& localToWorldSpace)
 	{
-		glm::vec3 planeVecA, planeVecB, planePoint, planeNormal;
-		glm::vec3 collisionNormal;
-		float distanceToPlane, velocityNormalComponent;
+		glm::vec3 planeVecA, planeVecB, planePoint, planeNormal, collisionNormal;
+		float distanceToPlane;
 		float shortestDistToPlane = std::numeric_limits<float>::max();
 		for (int i = 0; i < trianglesLength; i += 3)
 		{
@@ -48,45 +47,17 @@ namespace idop::phys
 			{
 				shortestDistToPlane = distanceToPlane;
 				collisionNormal = planeNormal;
-				velocityNormalComponent = glm::dot(collisionNormal, pointVelocity);
 			}
 		}
+		glm::vec3 relativeVel = pointVelocityA - pointVelocityB;
+		glm::vec3 tangent = glm::normalize(relativeVel - glm::dot(relativeVel, collisionNormal));
+		tangent = glm::length(tangent) != 0.0f ? glm::normalize(tangent) : glm::vec3(0);
 		ContactPoint contactPoint;
 		contactPoint._normal = collisionNormal;
 		contactPoint._worldPoint = worldPoint;
+		contactPoint._tangent = tangent;
 		contactPoint._penetrationDepth = shortestDistToPlane;
 		return contactPoint;
-	}
-
-	// returns normal of the colliding triangle
-	std::optional<glm::vec3> CollisionNormal(
-		const glm::vec3& worldPoint,
-		const glm::vec3* worldVertices,
-		const int* triangles,
-		const uint32_t verticesLength,
-		const uint32_t trianglesLength)
-	{
-		glm::vec3 planeVecA, planeVecB, planePoint, planeNormal;
-		float distanceToPlane;
-		//float shortestDistToPlane = std::numeric_limits<float>::max();
-		glm::vec3 collisionNormal(0.0f, 0.0f, 0.0f);
-		for (int i = 0; i < trianglesLength; i += 3)
-		{
-			planeVecA = worldVertices[triangles[i + 1]] - worldVertices[triangles[i]];
-			planeVecB = worldVertices[triangles[i + 2]] - worldVertices[triangles[i + 1]];
-			planePoint = worldVertices[triangles[i]];
-			planeNormal = glm::normalize(glm::cross(planeVecB, planeVecA));
-			if (HalfSpaceTest(planeNormal, planePoint, worldPoint) > 0.0f)
-				return {};
-			distanceToPlane = glm::dot(planeNormal, worldPoint - planePoint);
-			collisionNormal += planeNormal / distanceToPlane;
-			//if (distanceToPlane < shortestDistToPlane)
-			//{
-			//	shortestDistToPlane = distanceToPlane;
-			//	collisionNormal = planeNormal;
-			//}
-		}
-		return std::optional<glm::vec3>(glm::normalize(collisionNormal));
 	}
 
 	glm::mat4 InverseInertiaTensor(const glm::vec3& extents, const glm::mat4& rotation, const float mass)
@@ -126,7 +97,7 @@ namespace idop::phys
 		float inumerator = -(1.0f + coefficientOfRestitution) * glm::dot(relativeVelocity, normal);
 		auto momentDenomA = glm::cross(glm::vec3(inverseInertiaTA * glm::vec4(glm::cross(aToPoint, normal), 1.0f)), aToPoint);
 		auto momentDenomB = glm::cross(glm::vec3(inverseInertiaTB * glm::vec4(glm::cross(bToPoint, normal), 1.0f)), bToPoint);
-		float denominator = inverseMassSum + glm::dot(normal, momentDenomA + momentDenomB);
+		float denominator = inverseMassSum + glm::dot(normal, momentDenomA) + glm::dot(normal, momentDenomB);
 		if (denominator != 0.0f)
 			inumerator /= denominator;
 		return inumerator;
@@ -142,77 +113,78 @@ namespace idop::phys
 		bool bStatic = tSystem.GetIsStatic(colInfo._entityIdB);
 		if (aStatic && bStatic)
 			return;
-		float impulseMagnitude, staticFriction, frictImpMagnitude, normalVelocity;
-		glm::vec3 aToPoint, bToPoint, normalImpulse, tangent, fricImpulse;
-		glm::vec3 pointVelocityA, pointVelocityB, relativeVelocity;
-		glm::vec3 positionA = tSystem.GetPosition(colInfo._entityIdA);
-		glm::vec3 positionB = tSystem.GetPosition(colInfo._entityIdB);
+		float jNormal, staticFriction, jTangent;
+		glm::vec3 aToPoint, bToPoint, normalImpulse, tangent, tangentImpulse, pointVelocityA, pointVelocityB, relativeVelocity;
 		const RigidbodyData* rbDataA = rbSystem.GetReserved(colInfo._entityIdA) ? &rbSystem._componentData.at(colInfo._entityIdA & tSystem.INDEX_BITS_SEQ) : nullptr;
 		const RigidbodyData* rbDataB = rbSystem.GetReserved(colInfo._entityIdB) ? &rbSystem._componentData.at(colInfo._entityIdB & tSystem.INDEX_BITS_SEQ) : nullptr;
 		float massA = rbDataA ? rbSystem.GetMass(colInfo._entityIdA) : 0.0f;
 		float massB = rbDataB ? rbSystem.GetMass(colInfo._entityIdB) : 0.0f;
-		glm::mat4 inverseInertiaTensorA = rbDataA ? InverseInertiaTensor(glm::vec3(0.5f, 0.5f, 0.5f), glm::toMat4(tSystem.GetRotation(colInfo._entityIdA)), massA) : glm::mat4(1.0f);
-		glm::mat4 inverseInertiaTensorB = rbDataB ? InverseInertiaTensor(glm::vec3(0.5f, 0.5f, 0.5f), glm::toMat4(tSystem.GetRotation(colInfo._entityIdB)), massB) : glm::mat4(1.0f);
-		
+		float coefA = rbDataA ? rbSystem.GetCoef(colInfo._entityIdA) : 0.1f;
+		float coefB = rbDataB ? rbSystem.GetCoef(colInfo._entityIdB) : 0.1f;
+		glm::mat4 inerTensA = rbDataA ? InverseInertiaTensor(glm::vec3(0.5f, 0.5f, 0.5f), glm::toMat4(tSystem.GetRotation(colInfo._entityIdA)), massA) : glm::mat4(1.0f);
+		glm::mat4 inerTensB = rbDataB ? InverseInertiaTensor(glm::vec3(0.5f, 0.5f, 0.5f), glm::toMat4(tSystem.GetRotation(colInfo._entityIdB)), massB) : glm::mat4(1.0f);
+		float coef = -(1.0f + std::min(
+			rbDataA ? rbSystem.GetCoef(colInfo._entityIdA) : 0.1f,
+			rbDataB ? rbSystem.GetCoef(colInfo._entityIdB) : 0.1f));
+		float inverseMass =
+			(rbDataA ? 1.0f / rbSystem.GetMass(colInfo._entityIdA) : 0.0f) +
+			(rbDataB ? 1.0f / rbSystem.GetMass(colInfo._entityIdB) : 0.0f);
+
 		for (int i = 0; i < iterations; ++i)
 		{
 			for (int j = 0; j < colInfo._contactPoints.size(); ++j)
 			{
-				aToPoint = colInfo._contactPoints[j]._worldPoint - positionA;
-				bToPoint = colInfo._contactPoints[j]._worldPoint - positionB;
+				aToPoint = colInfo._contactPoints[j]._worldPoint - tSystem.GetPosition(colInfo._entityIdA);
+				bToPoint = colInfo._contactPoints[j]._worldPoint - tSystem.GetPosition(colInfo._entityIdB);
 				pointVelocityA = rbDataA ? rbSystem.GetVelocity(colInfo._entityIdA) + glm::cross(rbSystem.GetAngularVelocity(colInfo._entityIdA), aToPoint) : glm::vec3(0.0f, 0.0f, 0.0f);
 				pointVelocityB = rbDataB ? rbSystem.GetVelocity(colInfo._entityIdB) + glm::cross(rbSystem.GetAngularVelocity(colInfo._entityIdB), bToPoint) : glm::vec3(0.0f, 0.0f, 0.0f);
 				relativeVelocity = pointVelocityA - pointVelocityB;
-				normalVelocity = glm::dot(relativeVelocity, colInfo._contactPoints[j]._normal);
-				tangent = glm::normalize(relativeVelocity - normalVelocity * colInfo._contactPoints[j]._normal);
-				if (normalVelocity > 0.0f)
+				tangent = glm::normalize(relativeVelocity - glm::dot(relativeVelocity, colInfo._contactPoints[j]._normal));
+				if (glm::dot(relativeVelocity, colInfo._contactPoints[j]._normal) > 0.0f)
+					continue;
 					// If relative velocity is pointing at the same direction as collision normal,
 					// the point is already moving away and we don't want to collide it again
-					continue;
-				impulseMagnitude = ImpulseMagnitude(
-					aToPoint, bToPoint,
-					colInfo._contactPoints[j]._normal, relativeVelocity,
-					rbDataA ? rbSystem.GetCoef(colInfo._entityIdA) : 0.1f, rbDataB ? rbSystem.GetCoef(colInfo._entityIdB) : 0.1f,
-					massA, massB,
-					inverseInertiaTensorA, inverseInertiaTensorB);
-				frictImpMagnitude = ImpulseMagnitude(
-					aToPoint, bToPoint,
-					tangent, relativeVelocity,
-					rbDataA ? rbSystem.GetCoef(colInfo._entityIdA) : 0.1f, rbDataB ? rbSystem.GetCoef(colInfo._entityIdB) : 0.1f,
-					massA, massB,
-					inverseInertiaTensorA, inverseInertiaTensorB);
-				impulseMagnitude /= colInfo._contactPoints.size();
-				frictImpMagnitude /= colInfo._contactPoints.size();
-				normalImpulse = impulseMagnitude * colInfo._contactPoints[j]._normal;
+
+				jNormal = coef * glm::dot(relativeVelocity, colInfo._contactPoints[j]._normal)
+					/ (inverseMass + glm::dot(colInfo._contactPoints[j]._normal,
+						glm::cross(glm::vec3(inerTensA * glm::vec4(glm::cross(aToPoint, colInfo._contactPoints[j]._normal), 1.0f)), aToPoint)
+						+ glm::cross(glm::vec3(inerTensB * glm::vec4(glm::cross(bToPoint, colInfo._contactPoints[j]._normal), 1.0f)), bToPoint)));
+				jTangent = coef * glm::dot(relativeVelocity, tangent)
+					/ (inverseMass + glm::dot(tangent,
+						glm::cross(glm::vec3(inerTensA * glm::vec4(glm::cross(aToPoint, tangent), 1.0f)), aToPoint)
+						+ glm::cross(glm::vec3(inerTensB * glm::vec4(glm::cross(bToPoint, tangent), 1.0f)), bToPoint)));
+				jNormal /= colInfo._contactPoints.size();
+				jTangent /= colInfo._contactPoints.size();
+				normalImpulse = jNormal * colInfo._contactPoints[j]._normal;
 				staticFriction = std::sqrt((rbDataA ? rbSystem.GetStaticFriction(colInfo._entityIdA) : 0.5f) * (rbDataB ? rbSystem.GetStaticFriction(colInfo._entityIdB) : 0.5f));
 				staticFriction = glm::min(staticFriction, 1.0f);
-				if (std::abs(frictImpMagnitude) < (impulseMagnitude * staticFriction))
+				if (std::abs(jTangent) < (jNormal * staticFriction))
 				{
-					fricImpulse = frictImpMagnitude * tangent;
+					tangentImpulse = tangent * jTangent;
 				}
 				else
 				{
 					float dynamicFriction = std::sqrt((rbDataA ? rbSystem.GetDynamicFriction(colInfo._entityIdA) : 0.5f) * (rbDataB ? rbSystem.GetDynamicFriction(colInfo._entityIdB) : 0.5f));
-					fricImpulse = -impulseMagnitude * tangent * dynamicFriction;
+					tangentImpulse = tangent * -jNormal * dynamicFriction;
 				}
 
-				if (!aStatic && rbDataA)
+				if (rbDataA)
 				{
 					rbDataA->_velocity[colInfo._entityIdA & rbSystem.INDEX_BITS_COMP]
 						+= normalImpulse / massA
-						+ fricImpulse / massA;
+						+ tangentImpulse / massA;
 					rbDataA->_angularVelocity[colInfo._entityIdA & rbSystem.INDEX_BITS_COMP]
-						+= glm::vec3(inverseInertiaTensorA * glm::vec4(glm::cross(aToPoint, normalImpulse), 1.0f))
-						+ glm::vec3(inverseInertiaTensorA * glm::vec4(glm::cross(aToPoint, fricImpulse), 1.0f));
+						+= glm::vec3(inerTensA * glm::vec4(glm::cross(aToPoint, normalImpulse), 1.0f))
+						+ glm::vec3(inerTensA * glm::vec4(glm::cross(aToPoint, tangentImpulse), 1.0f));
 				}
-				if (!bStatic && rbDataB)
+				if (rbDataB)
 				{
 					rbDataB->_velocity[colInfo._entityIdB & rbSystem.INDEX_BITS_COMP]
 						-= normalImpulse / massB
-						- fricImpulse / massB;
+						- tangentImpulse / massB;
 					rbDataB->_angularVelocity[colInfo._entityIdB & rbSystem.INDEX_BITS_COMP]
-						-= glm::vec3(inverseInertiaTensorB * glm::vec4(glm::cross(bToPoint, normalImpulse), 1.0f))
-						- glm::vec3(inverseInertiaTensorB * glm::vec4(glm::cross(bToPoint, fricImpulse), 1.0f));
+						-= glm::vec3(inerTensB * glm::vec4(glm::cross(bToPoint, normalImpulse), 1.0f))
+						- glm::vec3(inerTensB * glm::vec4(glm::cross(bToPoint, tangentImpulse), 1.0f));
 				}
 			}
 		}
@@ -222,13 +194,10 @@ namespace idop::phys
 	{
 		if (colInfo._contactPoints.size() == 0)
 			return;
-		bool aStatic = tSystem.GetIsStatic(colInfo._entityIdA);
-		bool bStatic = tSystem.GetIsStatic(colInfo._entityIdB);
 		const TransformData& tDataA = tSystem._componentData.at(colInfo._entityIdA & tSystem.INDEX_BITS_SEQ);
 		const TransformData& tDataB = tSystem._componentData.at(colInfo._entityIdB & tSystem.INDEX_BITS_SEQ);
 		const RigidbodyData* rbDataA = rbSystem.GetReserved(colInfo._entityIdA) ? &rbSystem._componentData.at(colInfo._entityIdA & tSystem.INDEX_BITS_SEQ) : nullptr;
 		const RigidbodyData* rbDataB = rbSystem.GetReserved(colInfo._entityIdB) ? &rbSystem._componentData.at(colInfo._entityIdB & tSystem.INDEX_BITS_SEQ) : nullptr;
-
 		glm::vec3 normal = colInfo._contactPoints[0]._normal;
 		float depth = colInfo._contactPoints[0]._penetrationDepth;
 		for (int i = 1; i < colInfo._contactPoints.size(); ++i)
@@ -244,14 +213,10 @@ namespace idop::phys
 		inverseMassSum += rbDataB ? 1.0f / rbSystem.GetMass(colInfo._entityIdB) : 0.0f;
 		float scalar = 0.8f * depth / inverseMassSum;
 		glm::vec3 projection = scalar * normal;
-		if (!aStatic && rbDataA)
-		{
+		if (!tSystem.GetIsStatic(colInfo._entityIdA) && rbDataA)
 			tSystem.Translate(colInfo._entityIdA, projection / rbDataA->_mass[colInfo._entityIdA & rbSystem.INDEX_BITS_COMP]);
-		}
-		if (!bStatic && rbDataB)
-		{
+		if (!tSystem.GetIsStatic(colInfo._entityIdB) && rbDataB)
 			tSystem.Translate(colInfo._entityIdB, -projection / rbDataB->_mass[colInfo._entityIdB & rbSystem.INDEX_BITS_COMP]);
-		}
 	}
 	
 	std::vector<ContactPoint> ContactPoints(
@@ -305,24 +270,17 @@ namespace idop::phys
 			const glm::vec3 angularVelocityA,
 			const glm::vec3 angularVelocityB,
 			const glm::vec3 positionA,
-			const glm::vec3 positionB,
-			bool aIsRb,
-			bool bIsRb)
+			const glm::vec3 positionB)
 		{
 			glm::vec3 worldPoint, pointVelocity;
 			std::optional<ContactPoint> contactPoint;
 			for (int i = 0; i < mDataA._verticesLength[meshIndexA]; ++i)
 			{
 				worldPoint = transformationA * glm::vec4(mDataA._vertices[meshIndexA][i], 1.0f);
-				if (aIsRb)
-					pointVelocity = velocityA + glm::cross(angularVelocityA, worldPoint - positionA);
-				else if (bIsRb)
-					pointVelocity = -1.0f * velocityB + glm::cross(angularVelocityB, worldPoint - positionB);
-				else
-					pointVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
 				contactPoint = GetContactPoint(
 					worldPoint,
-					pointVelocity,
+					velocityA + glm::cross(angularVelocityA, worldPoint - positionA),
+					velocityB + glm::cross(angularVelocityB, worldPoint - positionB),
 					mDataB._vertices[meshIndexB],
 					mDataB._triangles[meshIndexB],
 					mDataB._verticesLength[meshIndexB],
@@ -345,8 +303,7 @@ namespace idop::phys
 			transformationA, transformationB,
 			velocityA, velocityB,
 			angularVelocityA, angularVelocityB,
-			positionA, positionB,
-			aIsRb, bIsRb);
+			positionA, positionB);
 		helper(
 			true,
 			contactPoints,
@@ -356,8 +313,7 @@ namespace idop::phys
 			transformationB, transformationA,
 			velocityB, velocityA,
 			angularVelocityB, angularVelocityA,
-			positionB, positionA,
-			aIsRb, bIsRb);
+			positionB, positionA);
 		return contactPoints;
 	}
 
@@ -395,7 +351,13 @@ namespace idop::phys
 		return collisions;
 	}
 
-	void ProcessRigidbodies(TransformSystem& tSystem, const RigidbodySystem& rbSystem, const ColliderSystem& colSystem, const MeshSystem& mSystem, float deltaTime, const glm::vec3& gravity)
+	std::vector<CollisionInfo> ProcessRigidbodies(
+		TransformSystem& tSystem,
+		const RigidbodySystem& rbSystem,
+		const ColliderSystem& colSystem,
+		const MeshSystem& mSystem,
+		float deltaTime,
+		const glm::vec3& gravity)
 	{
 		// Apply air resistance and gravity
 		for (auto const& [rbSeqIndex, rbData] : rbSystem._componentData)
@@ -423,17 +385,27 @@ namespace idop::phys
 			CorrectPositions(colInfo, tSystem, rbSystem);
 
 		// Update rigidbodies
+		const RbConstraints* constraints;
 		for (auto const& [rbSeqIndex, rbData] : rbSystem._componentData)
 		{
 			for (uint32_t i = 0, entityId = rbSeqIndex; i < rbSystem.INDEX_BITS_COMP; ++i, ++entityId)
 			{
+				constraints = &rbData._constraints[i];
 				if (!rbData._reserved[i] || !tSystem.IsReserved(entityId))
 					continue;
 				if (tSystem._componentData[entityId & tSystem.INDEX_BITS_SEQ]._isStatic[entityId & tSystem.INDEX_BITS_COMP])
 					continue;
-				tSystem.Translate(entityId, rbData._velocity[i]);
-				tSystem.Rotate(entityId, rbData._angularVelocity[i]);
+				tSystem.Translate(entityId, rbData._velocity[i] * deltaTime);
+				
+				if (!constraints->_freezeRotationX)
+					tSystem.Rotate(entityId, rbData._angularVelocity[i].x * deltaTime, glm::vec3(1.0f, 0.0f, 0.0f));
+				if (!constraints->_freezeRotationY)
+					tSystem.Rotate(entityId, rbData._angularVelocity[i].y * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
+				if (!constraints->_freezeRotationZ)
+					tSystem.Rotate(entityId, rbData._angularVelocity[i].z * deltaTime, glm::vec3(0.0f, 0.0f, 1.0f));
 			}
 		}
+
+		return collisions;
 	}
 }

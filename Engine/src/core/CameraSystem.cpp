@@ -22,7 +22,7 @@ namespace idop
 		glm::vec3 direction = glm::toMat4(rotation) * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
 		_componentData[entityId & INDEX_BITS_SEQ]._viewMatrix[entityId & INDEX_BITS_COMP] = glm::lookAt(
 			position,
-			position + direction,
+			glm::vec3(0.0f, 0.0f, 0.0f),
 			glm::vec3(0.0f, -1.0f, 0.0f)
 		);
     }

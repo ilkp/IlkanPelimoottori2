@@ -58,6 +58,7 @@ namespace idop
 	{
 		_reserved = new bool[length] { false };
 		_useGravity = new bool[length];
+		_constraints = new RbConstraints[length];
 		_mass = new float[length];
 		_momentOfInertia = new float[length];
 		_dragCoefficient = new float[length];
@@ -72,6 +73,7 @@ namespace idop
 	{
 		delete[](_reserved);
 		delete[](_useGravity);
+		delete[](_constraints);
 		delete[](_mass);
 		delete[](_momentOfInertia);
 		delete[](_dragCoefficient);
@@ -85,6 +87,9 @@ namespace idop
 	void RigidbodyData::Identity(uint32_t index)
 	{
 		_useGravity[index] = true;
+		_constraints[index]._freezeRotationX = false;
+		_constraints[index]._freezeRotationY = false;
+		_constraints[index]._freezeRotationZ = false;
 		_mass[index] = 1.0f;
 		_momentOfInertia[index] = 0.1f;
 		_dragCoefficient[index] = 0.0f;

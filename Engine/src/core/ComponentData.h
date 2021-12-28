@@ -47,6 +47,7 @@ namespace idop
 		static const size_t MAX_COMP_SIZE = sizeof(glm::vec3);
 		bool* _reserved = nullptr;
 		bool* _useGravity = nullptr;
+		RbConstraints* _constraints = nullptr;
 		float* _mass = nullptr;
 		float* _momentOfInertia = nullptr;
 		float* _dragCoefficient = nullptr;

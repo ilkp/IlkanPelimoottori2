@@ -98,6 +98,7 @@ namespace idop
 		bool IsStatic(Entity entity) const { return IsStatic(entity._entityId); };
 		
 		void CalculateMVP();
+		void SetStatic(uint32_t entityId, bool v) { _componentData.at(entityId & INDEX_BITS_SEQ)._isStatic[entityId & INDEX_BITS_COMP] = v; }
 		void Translate(uint32_t entityId, const glm::vec3& vector);
 		void Translate(uint32_t entityId, float x, float y, float z);
 		void SetScale(uint32_t entityId, const glm::vec3& vector);
@@ -106,8 +107,8 @@ namespace idop
 		void SetPosition(uint32_t entityId, float x, float y, float z);
 		void SetRotation(uint32_t entityId, const glm::quat& rotation);
 		void SetRotation(uint32_t entityId, const glm::mat4& rotation);
-		void Rotate(uint32_t entityId, const glm::vec3& eulerAngles);
-		void Rotate(uint32_t entityId, float x, float y, float z);
+		void Rotate(uint32_t entityId, float angle, const glm::vec3& axis);
+		//void Rotate(uint32_t entityId, float x, float y, float z);
 
 		glm::vec3 GetPosition(uint32_t entityId) const;
 		glm::mat4 GetPositionMat(uint32_t entityId) const;
@@ -134,6 +135,9 @@ namespace idop
 		void SetAngularVelocity(uint32_t entityId, const glm::vec3& angularVelocity);
 		void SetAngularVelocity(uint32_t entityId, float x, float y, float z);
 		void SetUseGravity(uint32_t entityId, bool v) { _componentData.at(entityId & INDEX_BITS_SEQ)._useGravity[entityId & INDEX_BITS_COMP] = v; }
+		void SetFreezeRotationX(uint32_t entityId, bool v) { _componentData.at(entityId & INDEX_BITS_SEQ)._constraints[entityId & INDEX_BITS_COMP]._freezeRotationX = v; }
+		void SetFreezeRotationY(uint32_t entityId, bool v) { _componentData.at(entityId & INDEX_BITS_SEQ)._constraints[entityId & INDEX_BITS_COMP]._freezeRotationY = v; }
+		void SetFreezeRotationZ(uint32_t entityId, bool v) { _componentData.at(entityId & INDEX_BITS_SEQ)._constraints[entityId & INDEX_BITS_COMP]._freezeRotationZ = v; }
 
 		bool GetReserved(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._reserved[entityId & INDEX_BITS_COMP]; }
 		float GetCoef(uint32_t entityId) const {return _componentData.at(entityId & INDEX_BITS_SEQ)._coefficientOfRestitution[entityId & INDEX_BITS_COMP]; }
@@ -144,6 +148,8 @@ namespace idop
 		glm::vec3 GetVelocity(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._velocity[entityId & INDEX_BITS_COMP]; }
 		glm::vec3 GetAcceleration(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._acceleration[entityId & INDEX_BITS_COMP]; }
 		glm::vec3 GetAngularVelocity(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._angularVelocity[entityId & INDEX_BITS_COMP]; }
+		glm::vec3 GetAngularVelocityDeg(uint32_t entityId) const;
+		RbConstraints GetRbConstraints(uint32_t entityId) const { return _componentData.at(entityId & INDEX_BITS_SEQ)._constraints[entityId & INDEX_BITS_COMP]; }
 	};
 
 	class MeshSystem : public ComponentSystem<MeshData>

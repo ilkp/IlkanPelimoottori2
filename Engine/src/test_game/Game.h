@@ -16,7 +16,7 @@ private:
 	bool _running = true;
 	float _timeSinceStart = 0.0f;
 	ctpl::thread_pool _threadPool = ctpl::thread_pool(std::thread::hardware_concurrency());
-	glm::vec3 _gravity = glm::vec3(0.0f, -0.1f, 0.0f);
+	glm::vec3 _gravity = glm::vec3(0.0f, -9.1f, 0.0f);
 	std::vector<idop::Entity> _cubes;
 	std::vector<uint32_t> _meshMVP;
 
@@ -27,7 +27,7 @@ private:
 	idop::ColliderSystem _colliderSystem = idop::ColliderSystem(32 * 1000, { &_transformSystem });
 	idop::RigidbodySystem _rigidBodySystem = idop::RigidbodySystem(32 * 1000, { &_transformSystem });
 
-	idop::SDL2Renderer _SDLrenderer = idop::SDL2Renderer(&_transformSystem, &_meshSystem, &_cameraSystem);
+	idop::render::Renderer _renderer;
 	idop::RenderingData _renderingData;
 
 	idop::Entity _cube = idop::Entity(_entitySystem.Next());
@@ -40,8 +40,13 @@ private:
 	idop::Entity _walln = idop::Entity(_entitySystem.Next());
 	idop::Entity _wallw = idop::Entity(_entitySystem.Next());
 
-	void UpdateCubes(float deltaTime);
-	void UpdateCubesParallel(float deltaTime);
+	float movex;
+	float movey;
+
 	void Update(float deltaTime);
 	void HandleEvents();
+	void DrawCollisionPoints(const std::vector<idop::CollisionInfo> collisions);
+	void DrawAxises();
+	void DrawRbVars(uint32_t entityId);
+	void MoveCamera(float deltaTime, float x, float y);
 };
